@@ -23,5 +23,11 @@ describe Oystercard do
       expect(card.balance).to eq 10
     end
 
+    it "should not be able to have a balance over £90" do
+      card = Oystercard.new
+      card.top_up(80)
+      expect { card.top_up(11) }.to raise_error "Maximum balanced is £#{Oystercard::MAXIMUM_BALANCE}"
+    end
+
   end
 end
