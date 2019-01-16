@@ -44,7 +44,7 @@ describe Oystercard do
 
      it "change the in_use attribute to false" do
        @card.touch_in(station)
-       @card.touch_out
+       @card.touch_out(station)
        expect(@card).not_to be_in_journey
      end
 
@@ -55,24 +55,39 @@ describe Oystercard do
      end
 
      it "charge the user when touch_out" do
-       expect { subject.touch_out }.to change{ subject.balance }
+       subject.touch_in(station)
+       expect { subject.touch_out(station) }.to change{ subject.balance }
        .by (-Oystercard::MINIMUM_FARE)
      end
 
-     it "remember where I have travelled from" do
-       subject.top_up(10)
-       expect(subject.touch_in(station)).to eq station
-     end
+     # it "remember where I have travelled from" do
+     #   subject.top_up(10)
+     #   expect(subject.touch_in(entry_station)).to eq entry_station
+     # end
 
      it "forget where I have travelled from" do
        subject.touch_in(station)
-       expect { subject.touch_out }
-       .to change { subject.entry_station }.to be_nil
+       expect { subject.touch_out(station) }
+       .to change { subject.station }.to be_nil
      end
 
      it "in_journey return true" do
        subject.touch_in(station)
        expect(subject.in_journey?).to be true
      end
+
+     let(:travel_history){ { in: station, out: station } }
+
+     it "see all previous trips" do
+       subject.touch_in(station)
+       subject.touch_out(station)
+       p travel_history
+       expect(subject.previous_trips).to include travel_history
+     end
+
+     it "has an empty travel_history by default" do
+      expect(subject.previous_trips).to eq []
+     end
+
    end
 end
