@@ -60,11 +60,6 @@ describe Oystercard do
        .by (-Oystercard::MINIMUM_FARE)
      end
 
-     # it "remember where I have travelled from" do
-     #   subject.top_up(10)
-     #   expect(subject.touch_in(entry_station)).to eq entry_station
-     # end
-
      it "forget where I have travelled from" do
        subject.touch_in(station)
        expect { subject.touch_out(station) }
