@@ -33,21 +33,6 @@ describe Oystercard do
        @card.top_up(15)
      end
 
-     it "start out of the journey" do
-       expect(@card).not_to be_in_journey
-     end
-
-     it "change the in_use attribute to true" do
-       @card.touch_in(station)
-       expect(@card).to be_in_journey
-     end
-
-     it "change the in_use attribute to false" do
-       @card.touch_in(station)
-       @card.touch_out(station)
-       expect(@card).not_to be_in_journey
-     end
-
      it "not be able to touch in if balance under £1" do
        card = Oystercard.new
        expect { card.touch_in(station) }
@@ -57,31 +42,44 @@ describe Oystercard do
      it "charge the user when touch_out" do
        subject.touch_in(station)
        expect { subject.touch_out(station) }.to change{ subject.balance }
-       .by (-Oystercard::MINIMUM_FARE)
+       .by (-Journey::MINIMUM_FARE)
      end
 
-     it "forget where I have travelled from" do
+     it "charge the user a penalty fare when touch_out twice" do
+       subject.touch_out(station)
+       expect { subject.touch_out(station) }.to change{ subject.balance }
+       .by (-Journey::PENALTY_FARE)
+     end
+
+     it "charge the user a penalty fare when touch_in twice" do
        subject.touch_in(station)
-       expect { subject.touch_out(station) }
-       .to change { subject.station }.to be_nil
+       expect { subject.touch_in(station) }.to change{ subject.balance }
+       .by (-Journey::PENALTY_FARE)
      end
 
-     it "in_journey return true" do
-       subject.touch_in(station)
-       expect(subject.in_journey?).to be true
-     end
-
-     let(:travel_history){ { in: station, out: station } }
 
      it "see all previous trips" do
        subject.touch_in(station)
        subject.touch_out(station)
-       p travel_history
-       expect(subject.previous_trips).to include travel_history
+       expect(subject.travel_history).not_to be_empty
      end
 
      it "has an empty travel_history by default" do
-      expect(subject.previous_trips).to eq []
+      expect(subject.travel_history).to eq []
+     end
+
+     it 'doesnt write failed journey on double touch in' do
+       subject.touch_in(station)
+       subject.touch_in(station)
+       subject.touch_out(station)
+       expect(subject.travel_history.length).to eq 2
+     end
+
+     it 'keeps last touch in on double touch out so fails so fails to apply penalty' do
+       subject.touch_in(station)
+       subject.touch_out(station)
+       expect { subject.touch_out(station) }.to change{ subject.balance }
+       .by (-Journey::PENALTY_FARE)
      end
 
    end

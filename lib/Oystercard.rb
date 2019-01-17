@@ -1,16 +1,15 @@
-require 'Journey'
+require_relative 'Journey'
 
 class Oystercard
 
   MAXIMUM_BALANCE = 90
   MINIMUM_BALANCE = 1
-  MINIMUM_FARE = 1
-  attr_accessor :balance, :station, :travel_history
+  attr_accessor :balance, :travel_history
 
   def initialize
     @balance = 0
-    @station = nil
     @travel_history = []
+    @journey = Journey.new
   end
 
   def top_up(amount)
@@ -18,29 +17,15 @@ class Oystercard
     @balance += amount
   end
 
-  def in_journey?
-    !!@station
-  end
-
   def touch_in(station)
     raise "insufficient funds < #{MINIMUM_BALANCE}" if @balance < MINIMUM_BALANCE
-    raise "Already on a journey" if in_journey?
-    journey = Journey.new
-    journey.start(station)
-    # @station = station
-    # record_travel("in")
+    record_travel unless @journey.completed?
+    @journey.start(station)
   end
 
   def touch_out(station)
-     raise "Can't touch out twice!" unless in_journey?
-     deduct(MINIMUM_FARE)
-     @station = station
-     record_travel("out")
-     erase_station
-  end
-
-  def previous_trips
-    @travel_history
+    @journey.finish(station)
+    record_travel
   end
 
 private
@@ -49,12 +34,9 @@ private
     @balance -= amount
   end
 
-  # def record_travel(status)
-  # status == "in" ? @travel_history << {in: @station}
-  # : @travel_history[-1][:out] = @station
-  # end
-
-  def erase_station
-    @station = nil
+  def record_travel
+  deduct(@journey.calculate_fare)
+  @travel_history << @journey
+  @journey = Journey.new
   end
 end
